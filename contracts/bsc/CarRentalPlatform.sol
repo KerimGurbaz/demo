@@ -54,7 +54,7 @@ contract CarRentalPlatform {
   event CarStatusEdited(uint indexed id, Status status);
   event UserAdded(address indexed wallletAddress, string name, string lastname);
   event Deposit(address indexed walletAddress, uint amount);
-  event CheckOuut(address indexed walletAddress , uint indexed carId);
+  event CheckOut(address indexed walletAddress , uint indexed carId);
   event CheckIn(address indexed walletAddres, uint indexed carId );
   event PaymentMade(address indexed walletAddress, uint amount);
   event BalenceWithdrawn(address indexed walletAddress, uint amount);
@@ -98,9 +98,72 @@ function addCar(string calldata name, string calldata url,uint rent, uint sale) 
 
   emit CarAdded(counter, cars[counter].name, cars[counter].imgUrl, cars[counter].rentFee, cars[counter].saleFee);
 
+  }
+
+  // editCarMetadata #onlyOwner #existingCar
+  function editCarMetadata(uint id, string calldata name, string calldata imgUrl, uint rentFee, uint saleFee) external onlyOwner {
+    require(cars[id].id !=0, "Car with given ID does not exist");
+    Car storage car = cars[id];
+    if(bytes(name).length !=0){
+      car.name = name;
+    }
+    if(bytes(imgUrl).length !=0){
+      car.imgUrl = imgUrl;
+    }
+    if(rentFee >0){
+      car.rentFee = rentFee;
+    }
+    if(saleFee > 0){
+      car.saleFee = saleFee;
+    }
+
+    emit CarMetadataEdited (id, car.name, car.imgUrl, car.rentFee, car.saleFee);
+
+  }
+
+  // editCarStatus #onlyOwner #existingCar
+  function editCarStatus(uint id, Status status) external onlyOwner{
+    require(cars[id].id !=0, "Car with given id does not exist");
+    cars[id].status = status;
+
+    emit CarStatusEdited(id, status);
+
+  }
+
+  // checkOut existingUser #isCarAvailable #userHasNotRentACar #userHasNoDebt
+  function checkOut(uint id)external{
+    require(isUser(msg.sender), "User does not exist!");
+    require(cars[id].status == Status.Available, "Car is not Available for use");
+    require(users[msg.sender].rentedCarId ==0 , "User has already rented a car");
+    require(users[msg.sender].debt == 0, "User has an outstanding debt!");
+
+    users[msg.sender].start = block.timestamp;
+    users[msg.sender].rentedCarId = id;
+    cars[id].status = Status.InUse;
+
+    emit CheckOut(msg.sender, id);
+
+  }
+
+  // checkIn #existingUser #userHasRentedACar
+  function checkIn() external{
+    require(isUser(msg.sender), "User does not exist!");
+    uint rentedCarId = users[msg.sender].rentedCarId;
+    require(rentedCarId !=0, "User has not rented a car");
+
+    uint usedSeconds = block.timestamp - users[msg.sender].start;
+    uint rentFee = cars[rentedCarId].rentFee;
+    users[msg.sender].debt += calculateDebt(usedSeconds, rentFee);
+
+    users[msg.sender].rentedCarId = 0;
+    users[msg.sender].start = 0;
+    cars[rentedCarId].status = Status.Available;
+
+    emit CheckIn(msg.sender, rentedCarId); 
+
+  }
 
 
-}
 
 
 
