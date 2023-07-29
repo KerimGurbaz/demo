@@ -47,7 +47,7 @@ contract CarRentalPlatform {
 
   //events
 
-  event CarrAdded(uint indexed id, string name, string imgUrl, uint rentFee, uint saleFee );
+  event CarAdded(uint indexed id, string name, string imgUrl, uint rentFee, uint saleFee );
 
   event CarMetadataEdited(uint indexed id, string name, string imgUrl, uint rentFee, uint saleFee);
 
@@ -78,6 +78,30 @@ contract CarRentalPlatform {
     require(msg.sender ==owner, "Only the owner can call this function");
     _;
   }
+//Functions
+// Execute Functions
+
+// setOwner #onlyOwner
+function setOwner(address _newOwner) external onlyOwner{
+  owner =_newOwner;
+}
+// addUser #nonExisting
+function addUser(string calldata name, string calldata lastname) external{
+  require(!isUser(msg.sender), "User already exists");
+  users[msg.sender] = User(msg.sender, name, lastname, 0,0,0,0);
+}
+// addCar onlyOwner #nonExistingCar
+function addCar(string calldata name, string calldata url,uint rent, uint sale) external onlyOwner{
+  _counter.increment();
+  uint counter =_counter.current();
+  cars[counter] = Car(counter, name, url, Status.Available, rent, sale);
+
+  emit CarAdded(counter, cars[counter].name, cars[counter].imgUrl, cars[counter].rentFee, cars[counter].saleFee);
+
+
+
+}
+
 
 
 
