@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.7;
 
 import "../../node_modules/@openzeppelin/contracts/utils/Counters.sol";
-contract CarRentalPlatform {
+
+import "../../node_modules/@openzeppelin/contracts/security/ReentrancyGuard.sol";
+contract CarRentalPlatform is ReentrancyGuard {
 
 
   //Counter
@@ -52,12 +54,12 @@ contract CarRentalPlatform {
   event CarMetadataEdited(uint indexed id, string name, string imgUrl, uint rentFee, uint saleFee);
 
   event CarStatusEdited(uint indexed id, Status status);
-  event UserAdded(address indexed wallletAddress, string name, string lastname);
+  event UserAdded(address indexed walletAddress, string name, string lastname);
   event Deposit(address indexed walletAddress, uint amount);
   event CheckOut(address indexed walletAddress , uint indexed carId);
   event CheckIn(address indexed walletAddres, uint indexed carId );
   event PaymentMade(address indexed walletAddress, uint amount);
-  event BalenceWithdrawn(address indexed walletAddress, uint amount);
+  event BalanceWithdrawn(address indexed walletAddress, uint amount);
 
   //user mapping
   mapping(address => User) private users;
@@ -187,9 +189,106 @@ function addCar(string calldata name, string calldata url,uint rent, uint sale) 
     users[msg.sender].debt = 0;
 
     emit PaymentMade(msg.sender, debt);
-
-
   }
+
+  // withdrawBalance #existingUser
+  function withdrawBalance(uint amount) external nonReentrant{
+
+    require(isUser(msg.sender), "User does not exist");
+    uint balance = users[msg.sender].balance;
+    require(balance >= amount, "Insufficient balance to withdraw");
+
+    unchecked{
+      users[msg.sender].balance -= amount;
+    }
+
+    (bool success,) = msg.sender.call{value:amount}("");
+    require(success, "Transfer failed");
+
+    emit BalanceWithdrawn(msg.sender, amount);
+  }
+
+  // withdrawOwnerBalance #onlyOwner
+  function withdrawOwnerBalance(uint amount) external onlyOwner{
+    require(totalPayments >= amount, "Insufficient contract balance to withdraw");
+
+    (bool success,) = owner.call{value:amount}("");
+    require(success, "Transfer failed");
+
+    unchecked{
+      totalPayments -= amount;
+    }
+  }
+
+  // Query Functions
+  // getOwner
+  function getOwner() external view returns(address){
+    return owner;
+  }
+
+  //isUser
+  function isUser(address walletAddress) private view returns(bool){
+    return users[walletAddress].walletAddress !=address(0);
+  }
+
+  // getUser #existingUser
+  function getUser(address walletAddress) external view returns (User memory){
+    require(isUser(walletAddress), "User does not exist");
+    return users[walletAddress];
+  }
+
+  // getCar #existingCar
+
+  function getCar(uint id) external view returns(Car memory){
+    require(cars[id].id !=0, "Car does not exist");
+    return cars[id];
+  }
+
+  // getCarByStatus
+  function getCarByStatus(Status _status) external view returns(Car[]memory){
+    uint count = 0;
+    uint length = _counter.current();
+    for(uint i = 1; i<=length; i++){
+      if(cars[i].status == _status){
+        count++;
+      }
+    }
+    Car[] memory carsWithStatus = new Car[](count);
+    count = 0;
+    for(uint i = 1; i<length; i++){
+      if(cars[i].status == _status){
+        carsWithStatus[count] = cars[i];
+        count++ ;
+      }
+    }
+
+    return carsWithStatus;
+  }
+
+  // calculateDebt
+  function calculateDebt(uint usedSeconds, uint rentFee)private pure returns(uint){
+    uint usedMinutes = usedSeconds /60;
+    return usedMinutes * rentFee;
+  }
+
+  // getCurrentCount
+  function getCurrentCount() external view returns(uint){
+    return _counter.current();
+  }
+
+  // getContractBalance #onlyOwner
+  function getContractBalance() external view onlyOwner returns(uint){
+    return address(this).balance;
+  }
+
+  // getTotalPayment #onlyOwner
+  function getTotalPayments() external view onlyOwner returns(uint){
+    return totalPayments;
+  }
+
+
+
+
 
 
 

@@ -7,7 +7,7 @@ require('dotenv').config();
 const mnemonic = process.env["MNEMONIC"].toString().trim();
 
 module.exports = {
-
+  
   /**
   * contracts_build_directory tells Truffle where to store compiled contracts
   */
@@ -49,7 +49,7 @@ module.exports = {
   // Configure your compilers
   compilers: {
     solc: {
-      version: "^0.8.4"
+      version: "^0.8.7"
     }
   },
   db: {
