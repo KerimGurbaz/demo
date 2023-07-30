@@ -35,7 +35,23 @@ contract("CarRentalPlatform", accounts => {
 
     const user = await carRentalPlatform.getUser(1);
     assert.equal(user.rentedCarId, 1, "User could not check out the car");
-  })
- })
+  });
+
+  it("Checks in a car", async()=>{
+    await carRentalPlatform.addUser("Alice", "Smith", {from:user1});
+    await carRentalPlatform.addCar("Tesla Model S", "example url", 10, 50000, {from:owner});
+    await carRentalPlatform.checkout(1, {from:user1});
+    await new Promise((resolve)=> setTimeOut(resolve, 60000)); // 1min.
+
+    await carRentalPlatform.checkIn({from: user1});
+
+    const user = await carRentalPlatform.getUser(1);
+
+    assert. equal(user.rentedCarId, 0, "User could not check in the car");
+    assert.equal(user.debt, 10, "User debt did not get created");
+  });
+ });
+
+
 
 });
