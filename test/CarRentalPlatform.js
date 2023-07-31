@@ -6,10 +6,10 @@ contract("CarRentalPlatform", accounts => {
  const user1 = accounts[1];
 
  beforeEach(async () =>{
-
+  carRentalPlatform= await carRentalPlatform.new();
  });
 
- descrie("Add user and car", ()=>{
+ describe("Add user and car", ()=>{
   it("adds a new user", async()=>{
     await carRentalPlatform.addUser("Alice", "Smith", {from : user1});
     const user = await carRentalPlatform.getUser(user1);
@@ -27,7 +27,7 @@ contract("CarRentalPlatform", accounts => {
   });
  });
 
- descrie ("Check out and check in car", ()=>{
+ describe ("Check out and check in car", ()=>{
   it("Check out a car", async()=>{
     await carRentalPlatform.addUser("Alice", "Smith", {from:user1});
     await carRentalPlatform.addCar("Tesla Model S", "example url", 10, 50000, {from:owner});
@@ -47,12 +47,12 @@ contract("CarRentalPlatform", accounts => {
 
     const user = await carRentalPlatform.getUser(user1);
 
-    assert. equal(user.rentedCarId, 0, "User could not check in the car");
+    assert.equal(user.rentedCarId, 0, "User could not check in the car");
     assert.equal(user.debt, 10, "User debt did not get created");
   });
  });
 
- descrie("Deposit token and make payment", ()=>{
+ describe("Deposit token and make payment", ()=>{
   it("deposits token", async()=>{
     await carRentalPlatform.addUser("Alice", "Smith", {from:user1});
     await carRentalPlatform.deposit({from:user1, value:10});
@@ -79,7 +79,7 @@ contract("CarRentalPlatform", accounts => {
   it("should edit an existing car's metadata with valid parameters", async()=>{
     await carRentalPlatform.addCar("Tesla Model S", "example img url", 10, 50000, {from:owner});
 
-    const newNAme = "Honda";
+    const newName = "Honda";
     const newImgUrl = "new img url";
     const newRentFee = 20;
     const newSaleFee = 100000;
@@ -97,14 +97,14 @@ contract("CarRentalPlatform", accounts => {
     const newStatus = 0;
     await carRentalPlatform.editCarStatus(1, newStatus, {from:owner});
     const car = await carRentalPlatform.getCar(1);
-    assert.equal(car.status, newStatus, "Prolem with editing car status");
+    assert.equal(car.status, newStatus, "Problem with editing car status");
   });
  });
 
  describe("Withdraw balance", ()=>{
   it("should send the desired amount of tokens to the user", async()=>{
     await carRentalPlatform.addUser("Alice", "Smith", {from:user1});
-    await carRentalPlatform.deposit({from: user1, vaalue:100});
+    await carRentalPlatform.deposit({from: user1, value:100});
     await carRentalPlatform.withdrawBalance(50, {from:user1});
 
     const user = await carRentalPlatform.getUser(user1);
